@@ -223,33 +223,42 @@ public class SoccerDatabase implements SoccerDB {
     // read data from file
     @Override
     public boolean readData(File file) {
-        FileOutputStream out = null;
 
+        if (!file.exists()){return false;}
+        Scanner newScan= null;
         try {
-            out = new FileOutputStream(file);
-            PrintWriter pw = new PrintWriter(out, true);
-            Set<String> keySet = database.keySet();
-            for(String key: keySet){
-                SoccerPlayer player = database.get(key);
-                pw.println(logString(player.getFirstName()));
-                pw.println(logString(player.getLastName()));
-                pw.println(logString(player.getTeamName()));
-                pw.println(logString(String.valueOf(player.getUniform())));
-                pw.println(logString(String.valueOf(player.getGoals())));
-                pw.println(logString(String.valueOf(player.getYellowCards())));
-                pw.println(logString(String.valueOf(player.getRedCards())));
+            newScan = new Scanner(file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            //return false;
+        }
+        while (true) {
+            String firstName = newScan.next();
+            String lastName = newScan.next();
+            String teamName = newScan.next();
+
+            int goals = Integer.parseInt(newScan.next());
+            int redCards = Integer.parseInt(newScan.next());
+            int uniformNum = Integer.parseInt(newScan.next());
+            int yelCards = Integer.parseInt(newScan.next());
+
+            removePlayer(firstName, lastName);
+
+            addPlayer(firstName, lastName, uniformNum, teamName);
+
+            for (int i=0; i<goals;i++){
+                bumpGoals(firstName, lastName);
+            }
+            for (int i=0; i<redCards;i++){
+                bumpRedCards(firstName, lastName);
+            }
+            for (int i=0; i<yelCards;i++){
+                bumpYellowCards(firstName, lastName);
             }
 
-            out.close();
-            return true;
-
-        } catch (FileNotFoundException e) {
-            logString("error opening file");
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (!newScan.hasNext()){break;}
         }
-
-        return file.exists();
+        return true;
     }
 
     /**
@@ -260,7 +269,27 @@ public class SoccerDatabase implements SoccerDB {
     // write data to file
     @Override
     public boolean writeData(File file) {
-        return false;
+
+
+        try {
+            PrintWriter pw = new PrintWriter(file);
+            for(SoccerPlayer p: database.values()) {
+                pw.println(logString(p.getFirstName()));
+                pw.println(logString(p.getLastName()));
+                pw.println(logString(p.getTeamName()));
+                pw.println(logString( Integer.toString((p.getGoals()))));
+                pw.println(logString( Integer.toString((p.getRedCards()))));
+                pw.println(logString( Integer.toString((p.getUniform()))));
+                pw.println(logString( Integer.toString((p.getYellowCards()))));
+                //pw.println(logString("******"));
+            }
+            pw.flush();
+            return true;
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -281,7 +310,16 @@ public class SoccerDatabase implements SoccerDB {
     // return list of teams
     @Override
     public HashSet<String> getTeams() {
-        return new HashSet<String>();
+
+        HashSet<String> hashSet = new HashSet<String>();
+
+        for(SoccerPlayer temp: database.values()){
+            if(!hashSet.contains(temp.getTeamName())){
+                hashSet.add(temp.getTeamName());
+            }
+        }
+
+        return hashSet;
     }
 
     /**
